@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlachemy
+psycopg2-binary    # postgreSQL
