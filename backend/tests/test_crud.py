@@ -12,18 +12,18 @@ def mock_redis_client():
 def test_create_task(mock_redis_client):
     task_create = schemas.TaskCreate(title="Test Task", description="Test Description")
     
-    # Mock uuid4 to return a predictable ID
-    with patch('uuid.uuid4', return_value=Mock(hex='test-uuid')):
+    # uuid4 をモックして、固定のIDを返すようにする
+    with patch('uuid.uuid4', return_value=uuid.UUID('00000000-0000-0000-0000-000000000000')):
         new_task = crud.create_task(mock_redis_client, task_create)
 
     assert new_task.title == "Test Task"
     assert new_task.description == "Test Description"
     assert new_task.status == schemas.Status.pending
     
-    # Verify Redis SET was called with the correct key and JSON data
-    expected_key = "task:test-uuid"
+    # 期待されるキーとデータを作成
+    expected_key = "task:00000000-0000-0000-0000-000000000000"
     expected_task_data = {
-        "id": "test-uuid",
+        "id": "00000000-0000-0000-0000-000000000000",
         "title": "Test Task",
         "description": "Test Description",
         "status": "pending",
@@ -31,8 +31,9 @@ def test_create_task(mock_redis_client):
         "updated_at": None
     }
     
-    # assert_called_once_with に正しい引数を渡す
-    mock_redis_client.set.assert_called_once_with(expected_key, json.dumps(expected_task_data))
+    # json.dumps を使って、文字列として比較
+    mock_redis_client.set.assert_called_once_with(expected_key, json.dumps(expected_task_data, default=str))
+
 
 def test_get_task(mock_redis_client):
     task_id = "test-uuid"
