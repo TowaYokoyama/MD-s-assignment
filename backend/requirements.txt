@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 pydantic
 redis
+pytest
+pytest-mock
