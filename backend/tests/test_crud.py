@@ -1,4 +1,4 @@
-
+import json
 from datetime import datetime
 from unittest.mock import Mock, patch
 import pytest
@@ -13,7 +13,7 @@ def test_create_task(mock_redis_client):
     task_create = schemas.TaskCreate(title="Test Task", description="Test Description")
     
     # Mock uuid4 to return a predictable ID
-    with patch('uuid.uuid4', return_value='test-uuid'):
+    with patch('uuid.uuid4', return_value=Mock(hex='test-uuid')):
         new_task = crud.create_task(mock_redis_client, task_create)
 
     assert new_task.title == "Test Task"
@@ -22,7 +22,17 @@ def test_create_task(mock_redis_client):
     
     # Verify Redis SET was called with the correct key and JSON data
     expected_key = "task:test-uuid"
-    mock_redis_client.set.assert_called_once_with(expected_key, new_task.model_dump_json())
+    expected_task_data = {
+        "id": "test-uuid",
+        "title": "Test Task",
+        "description": "Test Description",
+        "status": "pending",
+        "created_at": new_task.created_at.isoformat(),
+        "updated_at": None
+    }
+    
+    # assert_called_once_with に正しい引数を渡す
+    mock_redis_client.set.assert_called_once_with(expected_key, json.dumps(expected_task_data))
 
 def test_get_task(mock_redis_client):
     task_id = "test-uuid"
