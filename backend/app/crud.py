@@ -1,5 +1,5 @@
 from typing import List, Optional
-import json
+
 from redis import Redis
 from . import schemas
 from uuid import uuid4

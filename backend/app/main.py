@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status, Response,  Request
 import os
-import redis
+
 from redis import Redis, from_url as redis_from_url
 from . import schemas, crud
 from typing import List, Optional
@@ -19,7 +19,7 @@ app.add_middleware(
 # RedisクライアントをFastAPIの状態に保存
 @app.on_event("startup")
 def startup_event():
-    app.state.redis = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
+    app.state.redis = redis_from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
 
 # 依存性の注入（DI）
 def get_redis_client(request: Request) -> Redis:
