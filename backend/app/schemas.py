@@ -8,7 +8,7 @@ import enum
 class Status(str, enum.Enum):
     pending = "pending"
     completed = "completed"
-    improgress = "improgress"
+    in_progress = "in_progress"
 
 # タスクの基本構造
 class TaskBase(BaseModel):

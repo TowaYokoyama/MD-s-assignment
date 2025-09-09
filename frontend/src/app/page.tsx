@@ -2,28 +2,62 @@
 "use client";
 
 import { Button } from "@/components/Button";
+import Loading from "@/components/Loading";
+import { CircleCheckBig, Edit, ListTodo, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-type TaskStatus = "pending" | "completed";
+type TaskStatus = "pending" | "in_progress" | "completed"; 
 
 interface Task {
-  id: number;
+  id: string; 
   title: string;
   description: string | null;
   status: TaskStatus;
+  created_at?: string;
+  updated_at?:string|null
 }
 
 export default function Home() {
+  const [loading,setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null); 
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState<string | null>("");
   const [editStatus, setEditStatus] = useState<TaskStatus>("pending");
+  const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all");
+  const [timeFilter, setTimeFilter] = useState("all");
 
-  // バックエンドのURLを正しい形式に修正
+ 
   const API_BASE_URL = "http://localhost:8002";
+
+  const fetchTasks= async() => {
+    setLoading(true);
+        let url = `${API_BASE_URL}/tasks/`;
+    if (filterStatus !== "all") {
+      url += `?status=${filterStatus}`;
+    }
+
+    try{
+      const response = await fetch(url);
+    if(!response.ok){
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  const data : Task[] = await response.json();
+  setTasks(data);
+  }catch(error){
+    console.log("failed to fetch tasks",error);
+
+  }finally{
+    setLoading(false);
+  }
+  }
+
+    useEffect(() => {
+    fetchTasks();
+  }, [filterStatus]); //フィルターリングの状態が変更された場合再フェッチ
+
 
   const handleAddTask = async () => {
     try {
@@ -32,7 +66,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title, description, status: "pending" }),
+        body: JSON.stringify({ title, description }),
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -45,7 +79,7 @@ export default function Home() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => { 
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: "DELETE",
@@ -59,14 +93,14 @@ export default function Home() {
     }
   };
 
-  const handleUpdateTask = async (id: number) => {
+  const handleUpdateTask = async (id: string) => { 
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
           title: editTitle,
           description: editDescription,
           status: editStatus,
@@ -82,6 +116,31 @@ export default function Home() {
     }
   };
 
+  const handleToggleStatus = async (taskToToggle: Task) => { 
+    let newStatus: TaskStatus;
+    if (taskToToggle.status === "pending") {
+      newStatus = "in_progress";
+    } else if (taskToToggle.status === "in_progress") {
+      newStatus = "completed";
+    } else {
+      newStatus = "pending";
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskToToggle.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      fetchTasks();
+    } catch (error) {
+      console.error("Failed to toggle task status:", error);
+    }
+  };
+  
   const handleEditClick = (task: Task) => {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
@@ -96,27 +155,39 @@ export default function Home() {
     setEditStatus("pending");
   };
 
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/tasks/`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  const filterTasksByTime = (taskList: Task[]) => {
+    const now = new Date();
+    return taskList.filter(task => {
+      const createdAt = task.created_at ? new Date(task.created_at) : null;
+      if (!createdAt) return false;
+      
+      switch (timeFilter) {
+        case "today":
+          return createdAt.getDate() === now.getDate() && createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
+        case "this_week":
+          const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+          return createdAt >= firstDayOfWeek;
+        case "this_month":
+          return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
+        case "all":
+        default:
+          return true;
       }
-      const data: Task[] = await response.json();
-      setTasks(data);
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-    }
+    });
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const filteredTasks = filterTasksByTime(tasks);
+
+
+  if(loading){
+    return <Loading />
+  }
+  
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <main className="max-w-4xl mx-auto px-4 py-10">
-        {/* Task Creation Section */}
+        {/* タスク作成 */}
         <section className="mb-10 p-6 bg-gray-100 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold mb-4">新規タスクの作成</h2>
           <div className="flex flex-col gap-4">
@@ -138,7 +209,37 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Task List Section */}
+        {/*フィルターリング */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">タスクをフィルタリング</h2>
+          <div className="flex flex-wrap gap-4">
+            <Button onClick={() => setFilterStatus("all")} className={filterStatus === "all" ? "bg-blue-600" : ""}>
+              <ListTodo size={20} className="mr-2" />
+              すべて
+            </Button>
+            <Button onClick={() => setFilterStatus("pending")} className={filterStatus === "pending" ? "bg-blue-600" : ""}>
+              <ListTodo size={20} className="mr-2" />
+              未完了
+            </Button>
+            <Button onClick={() => setFilterStatus("completed")} className={filterStatus === "completed" ? "bg-blue-600" : ""}>
+              <CircleCheckBig size={20} className="mr-2" />
+              完了済み
+            </Button>
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              aria-label="時間でフィルタリング" 
+              className="bg-gray-200 text-gray-900 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">すべての時間</option>
+              <option value="today">今日</option>
+              <option value="this_week">今週</option>
+              <option value="this_month">今月</option>
+            </select>
+          </div>
+        </section>
+
+        {/* タスクリスト */}
         <section>
           <h2 className="text-3xl font-bold mb-6">あなたのタスク</h2>
           <div className="space-y-4">
@@ -175,6 +276,7 @@ export default function Home() {
                         className="bg-gray-200 text-gray-900 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="pending">未完了</option>
+                        <option value="in_progress">進行中</option>
                         <option value="completed">完了</option>
                       </select>
                       <div className="flex gap-2 mt-2">
@@ -184,38 +286,39 @@ export default function Home() {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <h3 className="font-bold text-xl text-gray-900">{task.title}</h3>
-                        <p className="text-gray-600 mt-1">{task.description}</p>
+                    <div className="flex-1 w-full">
+                        <h3 className={`font-bold text-xl text-gray-900 ${task.status === "completed" ? "line-through text-gray-500" : ""}`}>
+                          {task.title}
+                        </h3>
+                        <p className="text-gray-600 mt-1 break-words">{task.description}</p>
+                        <div className="text-sm text-gray-500 mt-2 flex flex-wrap gap-2">
+                          {task.created_at && (
+                            <span className="bg-gray-100 px-2 py-1 rounded-full">作成日: {new Date(task.created_at).toLocaleString()}</span>
+                          )}
+                          {task.updated_at && (
+                            <span className="bg-gray-100 px-2 py-1 rounded-full">更新日: {new Date(task.updated_at).toLocaleString()}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                            task.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
+                      <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                        <Button 
+                          onClick={() => handleToggleStatus(task)} 
+                          className={
+                            task.status === "completed" 
+                              ? "bg-green-500 hover:bg-green-600" 
+                              : task.status === "in_progress" 
+                                ? "bg-blue-500 hover:bg-blue-600" 
+                                : "bg-yellow-500 hover:bg-yellow-600"
+                          }
                         >
-                          {task.status === "completed" ? "完了" : "未完了"}
-                        </span>
-                        <button
-                          onClick={() => handleEditClick(task)}
-                          className="text-gray-600 hover:text-gray-900"
-                          aria-label="タスクを編集"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 6.232z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(task.id)}
-                          className="text-red-500 hover:text-red-700"
-                          aria-label="タスクを削除"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                          {task.status === "completed" ? "完了" : task.status === "in_progress" ? "進行中" : "未完了"}
+                        </Button>
+                        <Button onClick={() => handleEditClick(task)} className="bg-gray-500 hover:bg-gray-600">
+                          <Edit size={20} />
+                        </Button>
+                        <Button onClick={() => handleDelete(task.id)} className="bg-red-500 hover:bg-red-600">
+                          <Trash2 size={20} />
+                        </Button>
                       </div>
                     </>
                   )}
