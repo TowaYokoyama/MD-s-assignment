@@ -1,29 +1,26 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:13-alpine
-    environment: 
-      POSTGRES_USER: user 
-      POSTGRES_PASSWORD: password 
-      POSTGRES_DB: taskdb 
-    volumes: 
-      - postgres_data:/var/lib/postgresql/data/ 
-    #healthcheck: 
-      #test: ["CMD-SHELL", "pg-isready -U user"]
-      #interval: 5s 
-      #timeout: 5s 
-      #retries: 5 
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379" # Expose Redis port to host
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
 
   backend:
     build: ./backend 
     ports: 
-       - "8001:8000"
+       - "8002:8000"
     depends_on: 
-        - db 
+      redis:
+        condition: service_healthy
           
     environment: 
-     DATABASE_URL : postgresql://user:password@db:5432/taskdb
+     REDIS_URL : redis://redis:6379/0 
     # 開発中はホットリロードのためにボリュームをマウントする
     # volumes:
     #   - ./backend/app:/app/app
@@ -33,6 +30,3 @@ services:
      - "3000:3000"
     depends_on: 
      - backend 
-
-volumes:
-    postgres_data:

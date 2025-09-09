@@ -1,20 +1,20 @@
-# タスクに優先度をつける
-from sqlalchemy import Column, Integer, String, DateTime, Enum
-from sqlalchemy.sql import func
-from .database import Base
-import enum
+#postgre---→redisのため不要
+#import enum
+# from datetime import datetime
+# from typing import Optional
+# from pydantic import BaseModel, Field
+# import uuid 
 
-class Status(str, enum.Enum):
-    pending = "pending"
-    in_progress = "in_progress"
-    completed = "completed"
+# class Status(str, enum.Enum):
+    #pending = "pending"
+    #in_progress = "in_progress"
+    #completed = "completed"
 
-class Task(Base):
-    __tablename__ = "tasks"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True, nullable=False)
-    description = Column(String, nullable=True)
-    status = Column(Enum(Status), default=Status.pending, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+#class Task(BaseModel):
+    #__tablename__ = "tasks"
+    #id: str = Field(default_factory=lambda: str(uuid.uuid4())) 
+    #title: str
+    #description: Optional[str] = None
+    #status: Status = Status.pending
+    #created_at: datetime = Field(default_factory=datetime.now)
+   # updated_at: Optional[datetime] = None

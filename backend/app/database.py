@@ -1,21 +1,9 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+import redis
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://user:password@db:5432/taskdb")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL and DATABASE_URL.startswith("sqlite") else {}
-)
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_redis_client():
+    yield redis_client
