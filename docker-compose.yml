@@ -9,19 +9,19 @@ services:
       POSTGRES_DB: taskdb 
     volumes: 
       - postgres_data:/var/lib/postgresql/data/ 
-    healthcheck: 
-      test: ["CMD-SHELL", "pg-isready -U user"]
-      interval: 5s 
-      timeout: 5s 
-      retries: 5 
+    #healthcheck: 
+      #test: ["CMD-SHELL", "pg-isready -U user"]
+      #interval: 5s 
+      #timeout: 5s 
+      #retries: 5 
 
   backend:
     build: ./backend 
     ports: 
-       - "8000:8000"
+       - "8001:8000"
     depends_on: 
-        db: 
-          condition: service_healthy 
+        - db 
+          
     environment: 
      DATABASE_URL : postgresql://user:password@db:5432/taskdb
     # 開発中はホットリロードのためにボリュームをマウントする
