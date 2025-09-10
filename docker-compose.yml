@@ -12,12 +12,12 @@ services:
       retries: 5
 
   backend:
-    build: ./backend 
+    images: towakoyama/task-management-app-backend:latest
+    
     ports: 
-       - "8002:8000"
+       - "8000"
     depends_on: 
       redis:
-        condition: service_healthy
           
     environment: 
      REDIS_URL : redis://redis:6379/0 
@@ -25,8 +25,8 @@ services:
     # volumes:
     #   - ./backend/app:/app/app
   frontend:
-    build: ./frontend 
+    image: towakoyama/task-management-app-frontend:latest 
     ports: 
-     - "3000:3000"
+     - "3000"
     depends_on: 
      - backend 
