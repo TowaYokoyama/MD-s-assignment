@@ -11,7 +11,7 @@ services:
   name: backend
   env: python
   plan: starter
-  region: oregon
+  region: oregon # デプロイ先のリージョンを設定してください
   autoDeploy: false
   healthCheckPath: /
   # ★★★ 修正箇所 ★★★
@@ -27,7 +27,7 @@ services:
   name: frontend
   env: node
   plan: starter
-  region: oregon
+  region: oregon # デプロイ先のリージョンを設定してください
   autoDeploy: false
   rootDirectory: frontend
   buildCommand: npm install && npm run build
