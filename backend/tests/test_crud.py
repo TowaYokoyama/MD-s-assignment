@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from redis import Redis
 from app import crud, schemas
-
+import uuid
 @pytest.fixture
 def mock_redis_client():
     return Mock(spec=Redis)
