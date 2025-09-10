@@ -30,7 +30,7 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState("all");
 
  
-  const API_BASE_URL = "http://localhost:8002";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchTasks= async() => {
     setLoading(true);
