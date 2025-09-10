@@ -19,3 +19,6 @@ services:
 - type: redis
   name: redis
   plan: starter
+  ipAllowList:
+    - source: all
+      description: Allow internal connections from all services
