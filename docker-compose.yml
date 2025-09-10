@@ -1,15 +1,15 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:latest
-    ports:
-      - "6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
+  #redis:
+    #image: redis:latest
+    #ports:
+      #- "6379"
+   # healthcheck:
+     # test: ["CMD", "redis-cli", "ping"]
+     # interval: 1s
+     # timeout: 3s
+     # retries: 5
 
   backend:
     images: towakoyama/task-management-app-backend:latest
@@ -17,10 +17,10 @@ services:
     ports: 
        - "8000"
     depends_on: 
-      redis:
+      #redis:
           
     environment: 
-     REDIS_URL : redis://redis:6379/0 
+     REDIS_URL :  # redis://redis:6379/0 
     # 開発中はホットリロードのためにボリュームをマウントする
     # volumes:
     #   - ./backend/app:/app/app
