@@ -4,9 +4,8 @@ WORKDIR /app
 
 #COPY ./requirements.txt /app/requirements.txt
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-#COPY ./app /app/app
 COPY backend/app/ app/
 COPY backend/tests/ tests
 
