@@ -1,69 +1,79 @@
-# Task Management Application
+# タスク管理アプリケーション
 
-This is a simple task management application built with FastAPI for the backend and Next.js for the frontend.
+FastAPI（バックエンド）とNext.js（フロントエンド）で構築された、シンプルなタスク管理アプリケーションです。
 
-## Features
+## 主な機能
 
-- Create, Read, Update, Delete (CRUD) tasks.
-- Filter tasks by status (pending, in_progress, completed).
+- タスクの作成、読み取り、更新、削除 (CRUD)
+- ステータス（pending, in_progress, completed）によるタスクのフィルタリング
 
-## Technology Stack
+## 最終的な構成（アーキテクチャ）
 
-- **Backend**: FastAPI, Python
-- **Frontend**: Next.js, TypeScript
-- **Database**: PostgreSQL
+このアプリケーションは、以下のクラウドサービスを連携させて動作するように構築しました。
 
-## Getting Started
+- **フロントエンド**:
+  - **フレームワーク**: Next.js (React)
+  - **ホスティング**: Vercel
 
-### 1. Backend Setup
+- **バックエンド**:
+  - **フレームワーク**: FastAPI (Python)
+  - **ホスティング**: Fly.io (Dockerコンテナとしてデプロイ)
 
-First, set up the Python backend.
+- **データベース**:
+  - **種類**: Redis
+  - **ホスティング**: Fly.io (Fly Redis)
 
-**Database Setup (PostgreSQL)**
+## ローカル開発環境でのセットアップ
 
-1.  **Install PostgreSQL**: If you don't have it installed, download and install it from the [official website](https://www.postgresql.org/download/).
-2.  **Create a database**: Create a new database for this project. For example, `taskdb`.
-3.  **Create a user**: Create a user and grant privileges to the database. For example, user `user` with password `password`.
+### 1. バックエンド (FastAPI)
 
-**Environment Variables**
-
-The backend uses a `.env` file for configuration. Create a `.env` file in the `backend` directory and add the following line, replacing the credentials with your own if you used different ones:
-
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/taskdb"
-```
-
-**Installation & Running**
+ローカル環境でバックエンドを動かす場合の手順です。
 
 ```bash
-# Navigate to the backend directory
+# backend ディレクトリに移動
 cd backend
 
-# Create a virtual environment
+# Pythonの仮想環境を作成
 python -m venv venv
 
-# Activate the virtual environment (Windows)
+# 仮想環境を有効化 (Windowsの場合)
 .\venv\Scripts\Activate
 
-# Install dependencies
+# 必要なライブラリをインストール
 pip install -r requirements.txt
 
-# Run the FastAPI server
+# FastAPIサーバーを起動
+# (このコマンドを実行するには、ローカルでRedisが起動している必要があります)
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://127.0.0.1:8000`.
+APIは `http://127.0.0.1:8000` で利用可能になります。
 
-### 2. Frontend Setup
+### 2. フロントエンド (Next.js)
 
-(Instructions to be added later)
+ローカル環境でフロントエンドを動かす場合の手順です。
 
-### API Specification
+```bash
+# frontend ディレクトリに移動
+cd frontend
 
-The API provides the following endpoints:
+# 必要なライブラリをインストール
+npm install
 
-- `POST /tasks/`: Create a new task.
-- `GET /tasks/`: Get a list of all tasks. Can be filtered by `status`.
-- `GET /tasks/{task_id}`: Get a single task by its ID.
-- `PUT /tasks/{task_id}`: Update a task.
-- `DELETE /tasks/{task_id}`: Delete a task.
+# 開発サーバーを起動
+npm run dev
+```
+
+フロントエンドは `http://localhost:3000` で利用可能になります。
+
+## 開発者の感想
+
+フロント
+next.js
+バックエンド
+fastapi
+データベース
+redis
+はまったところ dockerのデプロイ(使わなかった)corsのエラー テストコード(pytest) postgres(sqlalchemy) 
+
+
