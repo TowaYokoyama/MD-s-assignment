@@ -1,10 +1,11 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 import pytest
 from redis import Redis
 from app import crud, schemas
 import uuid
+
 @pytest.fixture
 def mock_redis_client():
     return Mock(spec=Redis)
@@ -13,38 +14,35 @@ def test_create_task(mock_redis_client):
     task_create = schemas.TaskCreate(title="Test Task", description="Test Description")
     
     # uuid4 をモックして、固定のIDを返すようにする
-    with patch('uuid.uuid4', return_value=uuid.UUID('00000000-0000-0000-0000-000000000000')):
+    mock_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
+    with patch('uuid.uuid4', return_value=mock_uuid):
         new_task = crud.create_task(mock_redis_client, task_create)
 
     assert new_task.title == "Test Task"
     assert new_task.description == "Test Description"
     assert new_task.status == schemas.Status.pending
     
-    # 期待されるキーとデータを作成
+    # Redis SET呼び出しを検証
     expected_key = "task:00000000-0000-0000-0000-000000000000"
-    expected_task_data = {
-        "id": "00000000-0000-0000-0000-000000000000",
-        "title": "Test Task",
-        "description": "Test Description",
-        "status": "pending",
-        "created_at": new_task.created_at.isoformat(),
-        "updated_at": None
-    }
     
-    # json.dumps を使って、文字列として比較
-    mock_redis_client.set.assert_called_once_with(expected_key, json.dumps(expected_task_data, default=str))
+    # setメソッドの第2引数（JSONデータ）を検証する
+    # model_dump_json()の出力と直接比較する
+    mock_redis_client.set.assert_called_once_with(expected_key, new_task.model_dump_json())
 
 
 def test_get_task(mock_redis_client):
     task_id = "test-uuid"
-    mock_redis_client.get.return_value = schemas.Task(
+    
+    # Redisから取得するデータをPydanticモデルのJSON出力に合わせる
+    expected_task = schemas.Task(
         id=task_id,
         title="Existing Task",
         description="Existing Description",
         status=schemas.Status.completed,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
-    ).model_dump_json()
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )
+    mock_redis_client.get.return_value = expected_task.model_dump_json()
 
     task = crud.get_task(mock_redis_client, task_id)
     assert task is not None
@@ -60,6 +58,7 @@ def test_get_all_tasks(mock_redis_client):
     mock_redis_client.keys.return_value = [f"task:{task_id1}".encode(), f"task:{task_id2}".encode()]
     
     pipe = mock_redis_client.pipeline.return_value
+    pipe.get.side_effect = [task1_data.model_dump_json().encode(), task2_data.model_dump_json().encode()] # `get`のモックを修正
     pipe.execute.return_value = [task1_data.model_dump_json(), task2_data.model_dump_json()]
     
     tasks = crud.get_tasks(mock_redis_client, status=None)
